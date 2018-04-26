@@ -78,8 +78,6 @@ namespace CommunicationServer
                 int holePunched = Infrastructure[pipelineId].HolePunched;
                 Infrastructure[pipelineId].Slaves[holePunched].SendData(Infrastructure[pipelineId].Master[holePunched].socket.RemoteEndPoint.ToString());
                 Infrastructure[pipelineId].Master[holePunched].SendData(Infrastructure[pipelineId].Slaves[holePunched].socket.RemoteEndPoint.ToString());
-                Infrastructure[pipelineId].Slaves[holePunched].socket.Close();
-                Infrastructure[pipelineId].Master[holePunched].socket.Close();
                 lock (addLock)
                 {
                     Infrastructure[pipelineId].HolePunched++;
