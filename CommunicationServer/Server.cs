@@ -5,51 +5,85 @@ using System.Threading;
 using System.Net;
 using System.Net.Sockets;
 using System.Linq;
-
-namespace TcpHolePunchingServer
+using Newtonsoft.Json;
+using CommunicationServer.Model;
+namespace CommunicationServer
 {
     class Server
     {
-        CommunicationLayer server;
-        private List<CommunicationModule> communicationModule;
-        private Object moduleAddLock = new Object();
-        int count;
-        public List<string> IpPorts { get;}
+        private TcpListener tcpListener;
+        private Dictionary<string, CommunicationBlock> Infrastructure;
+        private Object addLock = new Object();
 
-        public Server(string ip)
+
+        public Server(string ip,int portNo)
         {
-           server = new CommunicationLayer(ip, 6000);
-            communicationModule = new List<CommunicationModule>();
-            IpPorts = new List<string>();
-            count = 0;
+
+            var Ip = ip.Split('.').Select(i => Convert.ToByte(i)).ToArray();
+            Infrastructure = new Dictionary<string, CommunicationBlock>();
+
+            try
+            {
+                tcpListener = new TcpListener(new IPAddress(Ip), portNo);
+                tcpListener.Start();
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine("Exception {0}", e);
+            }
         }
 
-        public void StartServer(int instance)
+        public void StartServer()
         {
-            Thread[] threads = new Thread[instance];
-            for (int i = 0; i < instance; i++)
+            while (true)
             {
-                threads[i] = new Thread(run);
-                threads[i].Start();
+                Socket socket= tcpListener.AcceptSocket();
+                var thread = new Thread( () => run(socket));
+                thread.Start();
             }
-            for (int i = 0; i < instance; i++)
-            {
-                threads[i].Join();
-            }
-            communicationModule[0].SendData(communicationModule[1].localEndPoint.ToString());
-            communicationModule[1].SendData(communicationModule[0].localEndPoint.ToString());
-            communicationModule[0].SendData(communicationModule[1].socket.RemoteEndPoint.ToString());
-            communicationModule[1].SendData(communicationModule[0].socket.RemoteEndPoint.ToString());
-
         }
 
 
-        public void run()
+        public void run(Socket socket)
         {
-            var module = server.AcceptConnection();
-            lock (moduleAddLock)
+            var module = new CommunicationModule
             {
-                communicationModule.Add(module);
+                socket = socket,
+                stream = new NetworkStream(socket)
+            };
+            CommunciationParameters communciationParameters = JsonConvert.DeserializeObject<CommunciationParameters>(module.ReceiveData());
+
+            lock (addLock)
+            {
+                if (!Infrastructure.ContainsKey(communciationParameters.PipelineId))
+                {
+                    Infrastructure[communciationParameters.PipelineId] = new CommunicationBlock();
+                }
+
+                if (communciationParameters.IsMaster)
+                    Infrastructure[communciationParameters.PipelineId].Master.Add(module);
+                else
+                    Infrastructure[communciationParameters.PipelineId].Master.Add(module);
+            }
+
+            SendIpData(communciationParameters.PipelineId);
+        }
+
+
+
+        private void SendIpData(string pipelineId)
+        {
+            while(Infrastructure[pipelineId].Master.Count > Infrastructure[pipelineId].HolePunched && Infrastructure[pipelineId].Slaves.Count > Infrastructure[pipelineId].HolePunched)
+            {
+                int holePunched = Infrastructure[pipelineId].HolePunched;
+                Infrastructure[pipelineId].Slaves[holePunched].SendData(Infrastructure[pipelineId].Master[holePunched].socket.RemoteEndPoint.ToString());
+                Infrastructure[pipelineId].Master[holePunched].SendData(Infrastructure[pipelineId].Slaves[holePunched].socket.RemoteEndPoint.ToString());
+                Infrastructure[pipelineId].Slaves[holePunched].socket.Close();
+                Infrastructure[pipelineId].Master[holePunched].socket.Close();
+                lock (addLock)
+                {
+                    Infrastructure[pipelineId].HolePunched++;
+                } 
             }
         }
     }

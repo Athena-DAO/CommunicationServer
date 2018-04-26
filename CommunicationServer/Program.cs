@@ -1,21 +1,15 @@
 ﻿using System;
 using System.Threading;
 
-namespace TcpHolePunchingServer
+namespace CommunicationServer
 {
     class Program
     {
         static void Main(string[] args)
         {
-            string ip;
-            Console.WriteLine("Enter the ip Address");
-            ip = Console.ReadLine();
-            Server server = new Server(ip);
-            server.StartServer(2);
+            Server server = new Server("127.0.0.1",6000);
+            server.StartServer();
 
         }
-
-
-
-    }
+    }   
 }
