@@ -7,7 +7,9 @@ namespace CommunicationServer
     {
         static void Main(string[] args)
         {
-            Server server = new Server("192.168.1.2",6000);
+            Console.WriteLine("Enter the Ip Address");
+            var Ip = Console.ReadLine();
+            Server server = new Server(Ip,6000);
             server.StartServer();
 
         }
