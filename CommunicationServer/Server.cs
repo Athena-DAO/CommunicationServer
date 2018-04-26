@@ -15,7 +15,6 @@ namespace CommunicationServer
         private Dictionary<string, CommunicationBlock> Infrastructure;
         private Object addLock = new Object();
 
-
         public Server(string ip,int portNo)
         {
 
@@ -51,7 +50,8 @@ namespace CommunicationServer
                 socket = socket,
                 stream = new NetworkStream(socket)
             };
-            CommunciationParameters communciationParameters = JsonConvert.DeserializeObject<CommunciationParameters>(module.ReceiveData());
+            var t = module.ReceiveData();
+            CommunciationParameters communciationParameters = JsonConvert.DeserializeObject<CommunciationParameters>(t);
 
             lock (addLock)
             {
@@ -63,7 +63,7 @@ namespace CommunicationServer
                 if (communciationParameters.IsMaster)
                     Infrastructure[communciationParameters.PipelineId].Master.Add(module);
                 else
-                    Infrastructure[communciationParameters.PipelineId].Master.Add(module);
+                    Infrastructure[communciationParameters.PipelineId].Slaves.Add(module);
             }
 
             SendIpData(communciationParameters.PipelineId);

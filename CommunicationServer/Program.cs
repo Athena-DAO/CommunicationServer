@@ -7,7 +7,7 @@ namespace CommunicationServer
     {
         static void Main(string[] args)
         {
-            Server server = new Server("127.0.0.1",6000);
+            Server server = new Server("192.168.1.2",6000);
             server.StartServer();
 
         }

@@ -13,6 +13,8 @@ namespace CommunicationServer.Model
         public CommunicationBlock()
         {
             HolePunched = 0;
+            Master = new List<CommunicationModule>();
+            Slaves = new List<CommunicationModule>();
         }
 
     }
