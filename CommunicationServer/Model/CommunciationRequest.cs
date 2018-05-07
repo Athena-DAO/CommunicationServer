@@ -4,7 +4,7 @@ using System.Text;
 
 namespace CommunicationServer.Model
 {
-    class CommunciationParameters
+    class CommunciationRequest
     {
         public string PipelineId { get; set; }
         public bool IsMaster { get; set; }

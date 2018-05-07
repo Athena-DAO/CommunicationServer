@@ -7,6 +7,9 @@ using System.Net.Sockets;
 using System.Linq;
 using Newtonsoft.Json;
 using CommunicationServer.Model;
+using Microsoft.Extensions.Configuration;
+using System.IO;
+
 namespace CommunicationServer
 {
     class Server
@@ -14,10 +17,10 @@ namespace CommunicationServer
         private TcpListener tcpListener;
         private Dictionary<string, CommunicationBlock> Infrastructure;
         private Object addLock = new Object();
-
+        public static IConfiguration Configuration { get; set; }
         public Server(string ip,int portNo)
         {
-
+            BuildConfiguration();
             var Ip = ip.Split('.').Select(i => Convert.ToByte(i)).ToArray();
             Infrastructure = new Dictionary<string, CommunicationBlock>();
 
@@ -31,7 +34,11 @@ namespace CommunicationServer
                 Console.WriteLine("Exception {0}", e);
             }
         }
-
+        private static void BuildConfiguration()
+        {
+            var builder = new ConfigurationBuilder().SetBasePath(Directory.GetCurrentDirectory()).AddJsonFile("appsettings.json");
+            Configuration = builder.Build();
+        }
         public void StartServer()
         {
             while (true)
@@ -51,7 +58,7 @@ namespace CommunicationServer
                 stream = new NetworkStream(socket)
             };
             var t = module.ReceiveData();
-            CommunciationParameters communciationParameters = JsonConvert.DeserializeObject<CommunciationParameters>(t);
+            CommunciationRequest communciationParameters = JsonConvert.DeserializeObject<CommunciationRequest>(t);
 
             lock (addLock)
             {
@@ -76,13 +83,19 @@ namespace CommunicationServer
             while(Infrastructure[pipelineId].Master.Count > Infrastructure[pipelineId].HolePunched && Infrastructure[pipelineId].Slaves.Count > Infrastructure[pipelineId].HolePunched)
             {
                 int holePunched = Infrastructure[pipelineId].HolePunched;
-                Infrastructure[pipelineId].Slaves[holePunched].SendData(Infrastructure[pipelineId].Master[holePunched].socket.RemoteEndPoint.ToString());
-                Infrastructure[pipelineId].Master[holePunched].SendData(Infrastructure[pipelineId].Slaves[holePunched].socket.RemoteEndPoint.ToString());
+                Infrastructure[pipelineId].Slaves[holePunched].SendData(BuildCommunicationResponseJson(Infrastructure[pipelineId].Master[holePunched].socket.RemoteEndPoint));
+                Infrastructure[pipelineId].Master[holePunched].SendData(BuildCommunicationResponseJson(Infrastructure[pipelineId].Slaves[holePunched].socket.RemoteEndPoint));
                 lock (addLock)
                 {
                     Infrastructure[pipelineId].HolePunched++;
                 } 
             }
+        }
+
+
+        private string BuildCommunicationResponseJson(EndPoint endPoint)
+        {
+            return JsonConvert.SerializeObject(new CommunicationResponse() { EndPoint = endPoint.ToString(), P2P = bool.Parse($"{Configuration["P2P"]}") });
         }
     }
 }

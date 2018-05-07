@@ -1,17 +1,23 @@
-﻿using System;
-using System.Threading;
+﻿using Microsoft.Extensions.Configuration;
+using System.IO;
 
 namespace CommunicationServer
 {
-    class Program
+    internal class Program
     {
-        static void Main(string[] args)
-        {
-            Console.WriteLine("Enter the Ip Address");
-            var Ip = Console.ReadLine();
-            Server server = new Server(Ip,6000);
-            server.StartServer();
+        public static IConfiguration Configuration { get; set; }
 
+        private static void Main(string[] args)
+        {
+            BuildConfiguration();
+            Server server = new Server($"{Configuration["Ip"]}", int.Parse($"{Configuration["Port"]}"));
+            server.StartServer();
         }
-    }   
+
+        public static void BuildConfiguration()
+        {
+            var builder = new ConfigurationBuilder().SetBasePath(Directory.GetCurrentDirectory()).AddJsonFile("appsettings.json");
+            Configuration = builder.Build();
+        }
+    }
 }
