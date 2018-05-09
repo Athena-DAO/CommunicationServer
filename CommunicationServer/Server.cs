@@ -83,8 +83,8 @@ namespace CommunicationServer
             while(Infrastructure[pipelineId].Master.Count > Infrastructure[pipelineId].HolePunched && Infrastructure[pipelineId].Slaves.Count > Infrastructure[pipelineId].HolePunched)
             {
                 int holePunched = Infrastructure[pipelineId].HolePunched;
-                Infrastructure[pipelineId].Slaves[holePunched].SendData(BuildCommunicationResponseJson(Infrastructure[pipelineId].Master[holePunched].socket.RemoteEndPoint));
-                Infrastructure[pipelineId].Master[holePunched].SendData(BuildCommunicationResponseJson(Infrastructure[pipelineId].Slaves[holePunched].socket.RemoteEndPoint));
+                Infrastructure[pipelineId].Slaves[holePunched].SendData(BuildCommunicationResponseJson(Infrastructure[pipelineId].Master[holePunched].socket.RemoteEndPoint, holePunched));
+                Infrastructure[pipelineId].Master[holePunched].SendData(BuildCommunicationResponseJson(Infrastructure[pipelineId].Slaves[holePunched].socket.RemoteEndPoint, holePunched));
                 lock (addLock)
                 {
                     Infrastructure[pipelineId].HolePunched++;
@@ -93,9 +93,13 @@ namespace CommunicationServer
         }
 
 
-        private string BuildCommunicationResponseJson(EndPoint endPoint)
+        private string BuildCommunicationResponseJson(EndPoint endPoint , int queueNumber)
         {
-            return JsonConvert.SerializeObject(new CommunicationResponse() { EndPoint = endPoint.ToString(), P2P = bool.Parse($"{Configuration["P2P"]}") });
+            return JsonConvert.SerializeObject(new CommunicationResponse() {
+                EndPoint = endPoint.ToString(),
+                QueueNumber =queueNumber,
+                P2P = bool.Parse($"{Configuration["P2P"]}")
+            });
         }
     }
 }
