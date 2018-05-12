@@ -82,13 +82,15 @@ namespace CommunicationServer
         {
             while(Infrastructure[pipelineId].Master.Count > Infrastructure[pipelineId].HolePunched && Infrastructure[pipelineId].Slaves.Count > Infrastructure[pipelineId].HolePunched)
             {
-                int holePunched = Infrastructure[pipelineId].HolePunched;
-                Infrastructure[pipelineId].Slaves[holePunched].SendData(BuildCommunicationResponseJson(Infrastructure[pipelineId].Master[holePunched].socket.RemoteEndPoint, holePunched));
-                Infrastructure[pipelineId].Master[holePunched].SendData(BuildCommunicationResponseJson(Infrastructure[pipelineId].Slaves[holePunched].socket.RemoteEndPoint, holePunched));
+                int holePunched;
                 lock (addLock)
                 {
-                    Infrastructure[pipelineId].HolePunched++;
-                } 
+                    holePunched = Infrastructure[pipelineId].HolePunched++;
+                }
+                // Infrastructure[pipelineId].HolePunched;
+                Infrastructure[pipelineId].Slaves[holePunched].SendData(BuildCommunicationResponseJson(Infrastructure[pipelineId].Master[holePunched].socket.RemoteEndPoint, holePunched));
+                Infrastructure[pipelineId].Master[holePunched].SendData(BuildCommunicationResponseJson(Infrastructure[pipelineId].Slaves[holePunched].socket.RemoteEndPoint, holePunched));
+ 
             }
         }
 
